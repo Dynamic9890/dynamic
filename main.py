@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import json, random, time, os, asyncio
 from keep_alive import keep_alive
+from discord.ext import tasks
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -25,9 +26,23 @@ def save_data():
         json.dump(xp_data, f)
 
 
+@tasks.loop(minutes=30)
+async def backup_xp_data():
+    channel = bot.get_channel(1374366552983343254)  # Replace with your backup channel ID
+    if not channel:
+        print("Backup channel not found!")
+        return
+    try:
+        with open(DATA_FILE, "r") as f:
+            data = f.read()
+        await channel.send(file=discord.File(DATA_FILE, filename="xp_backup.json"))
+    except Exception as e:
+        print(f"Backup failed: {e}")
+
 @bot.event
 async def on_ready():
     print(f"{bot.user} is online!")
+    backup_xp_data.start()
 
 
 @bot.event
@@ -171,6 +186,7 @@ async def rank(ctx, target: discord.Member = None):
 
 
 @bot.command()
+@commands.has_permissions(administrator=True)
 async def resetxp(ctx, target: discord.Member = None):
     guild_id = str(ctx.guild.id)
     if target:
@@ -199,3 +215,4 @@ async def resetxp_error(ctx, error):
 # Start web server and run bot
 keep_alive()
 bot.run(os.getenv("TOKEN"))
+
