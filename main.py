@@ -42,7 +42,39 @@ async def backup_xp_data():
 @bot.event
 async def on_ready():
     print(f"{bot.user} is online!")
+    await load_backup_from_discord()
     backup_xp_data.start()
+
+
+async def load_backup_from_discord():
+    global xp_data
+    backup_channel_id = 1374366552983343254
+    channel = bot.get_channel(backup_channel_id)
+
+    if not channel:
+        print("Backup channel not found!")
+        return
+
+    try:
+        async for message in channel.history(limit=50):
+            for attachment in message.attachments:
+                if attachment.filename == "xp_backup.json":
+                    await attachment.save("xp_data.json")
+                    with open("xp_data.json", "r") as f:
+                        xp_data = json.load(f)
+                    print("Successfully loaded XP data from latest Discord backup.")
+                    return
+        print("No backup file found. Falling back to local file...")
+    except Exception as e:
+        print(f"Error loading backup from Discord: {e}")
+
+    # Fallback: try loading local file
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            xp_data = json.load(f)
+        print("Successfully loaded XP data from local JSON file.")
+    else:
+        print("No local data file found. Starting fresh.")
 
 
 @bot.event
@@ -215,4 +247,3 @@ async def resetxp_error(ctx, error):
 # Start web server and run bot
 keep_alive()
 bot.run(os.getenv("TOKEN"))
-
