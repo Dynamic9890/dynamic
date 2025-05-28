@@ -215,6 +215,7 @@ async def rank(ctx, target: discord.Member = None):
     embed.add_field(name="Global Rank",
                     value=f"{global_rank}/{len(sorted_users)}")
     await ctx.send(embed=embed)
+    await asyncio.sleep(2)
 
 
 @bot.command()
